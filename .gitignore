@@ -105,3 +105,6 @@ $RECYCLE.BIN/
 *.jpeg
 pkg/
 bin/
+
+# python
+venv/
