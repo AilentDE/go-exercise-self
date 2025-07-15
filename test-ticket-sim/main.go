@@ -33,12 +33,13 @@ func main() {
 			return
 		}
 
-		// buy ticket
-		result := stock.HandleBuyTicket(redisClient, ticketKey, 1)
+		// buy ticket - 現在返回成功狀態和剩餘數量
+		success, remainingQty := stock.HandleBuyTicket(redisClient, ticketKey, 1)
 		resultRecord := record.Record{
-			ID:        id.String(),
-			Timestamp: time.Now().UnixMilli(),
-			Result:    strconv.FormatBool(result),
+			ID:           id.String(),
+			Timestamp:    time.Now().UnixNano(),
+			Result:       strconv.FormatBool(success),
+			RemainingQty: remainingQty, // 新增剩餘數量
 		}
 		record.InsertRecord(resultRecord)
 		w.Header().Set("Content-Type", "application/json")

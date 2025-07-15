@@ -20,18 +20,18 @@ func PreloadTickets(rds *redis.Client, ticketKey string, stock int) {
 	log.Printf("preload tickets success: %v", stock)
 }
 
-func HandleBuyTicket(rds *redis.Client, ticketKey string, stock int) bool {
+func HandleBuyTicket(rds *redis.Client, ticketKey string, stock int) (bool, int64) {
 	result, err := rds.Decr(ctx, ticketKey).Result()
 	if err != nil {
 		log.Printf("buy ticket failed: %v", err)
-		return false
+		return false, -1
 	}
 
 	if result < 0 {
 		log.Printf("ticket sold out")
-		return false
+		return false, result
 	}
 
 	log.Printf("buy ticket success: %v", result)
-	return true
+	return true, result
 }
