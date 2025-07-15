@@ -1,10 +1,17 @@
 services:
-  redis:
-    image: redis:latest
+  # redis:
+  #   image: redis:latest
+  #   ports:
+  #     - "6379:6379"
+  #   volumes:
+  #     - redis_data:/data
+
+  valkey:
+    image: valkey/valkey:latest
     ports:
       - "6379:6379"
     volumes:
-      - redis_data:/data
-
+      - valkey_data:/data
 volumes:
-  redis_data:
+  # redis_data:
+  valkey_data:
