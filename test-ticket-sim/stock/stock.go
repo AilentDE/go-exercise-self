@@ -2,7 +2,9 @@ package stock
 
 import (
 	"context"
+	"errors"
 	"log"
+	"time"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -11,13 +13,37 @@ var (
 	ctx = context.Background()
 )
 
-func PreloadTickets(rds *redis.Client, ticketKey string, stock int) {
-	err := rds.Set(ctx, ticketKey, stock, 0).Err()
-	if err != nil {
-		log.Printf("preload tickets failed: %v", err)
+func PreloadTickets(rds *redis.Client, ticketKey string, stock int) error {
+	// 檢查是否已經有庫存
+	_, err := rds.Get(ctx, ticketKey).Result()
+	if err == nil {
+		// 已經有庫存，直接返回
+		return nil
 	}
 
-	log.Printf("preload tickets success: %v", stock)
+	// 如果 key 不存在或庫存為 0，則初始化庫存
+	for i := 0; i < 10; i++ {
+		ok, err := rds.SetNX(ctx, ticketKey, stock, time.Second*10).Result()
+		if err != nil {
+			log.Printf("setNX failed: %v", err)
+			continue
+		}
+
+		if ok {
+			log.Printf("preload tickets success: %v", stock)
+			return nil
+		}
+
+		// 如果 SetNX 失敗，檢查是否其他進程已經設置了庫存
+		time.Sleep(time.Millisecond * 10)
+		_, err = rds.Get(ctx, ticketKey).Result()
+		if err == nil {
+			return nil
+		}
+
+	}
+
+	return errors.New("preload tickets failed")
 }
 
 func HandleBuyTicket(rds *redis.Client, ticketKey string, stock int) (bool, int64) {

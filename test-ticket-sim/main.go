@@ -21,15 +21,26 @@ var (
 )
 
 func main() {
-	// init stock
-	stock.PreloadTickets(redisClient, ticketKey, 150)
+	// clear redis
+	redisClient.FlushAll(ctx)
+	log.Printf("redis cleared")
 
 	http.HandleFunc("/buy", func(w http.ResponseWriter, r *http.Request) {
+		// init stock
+		err := stock.PreloadTickets(redisClient, ticketKey, 150)
+		if err != nil {
+			log.Printf("preload tickets failed: %v", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+
 		// task id
 		id, err := uuid.NewV7()
 		if err != nil {
 			log.Printf("generate uuid failed: %v", err)
 			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 			return
 		}
 
